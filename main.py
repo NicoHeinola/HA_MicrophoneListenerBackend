@@ -3,10 +3,11 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 import uvicorn
-from routes.index import router as index_router
-from routes.speech_to_text_routes import router as speech_to_text_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s]: %(message)s")
+
+from routes.index import router as index_router
+from routes.speech_to_text_routes import router as speech_to_text_router
 
 app = FastAPI()
 

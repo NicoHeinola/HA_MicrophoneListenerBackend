@@ -1,7 +1,7 @@
 import logging
 import threading
 
-from helpers.speech_to_text.vosk_speech_to_text_helper import VoskSpeechToTextHelper
+from helpers.speech_to_text.vosk.vosk_speech_to_text_helper import VoskSpeechToTextHelper
 
 
 logger = logging.getLogger(__name__)
