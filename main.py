@@ -2,14 +2,12 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, Body
 import uvicorn
+from routes.index import router as index_router
 
 app = FastAPI()
 
-
-@app.get("/")
-def read_root():
-    return {"message": "Speech to Text API is running."}
-
+# Include routes
+app.include_router(index_router)
 
 if __name__ == "__main__":
     load_dotenv()
