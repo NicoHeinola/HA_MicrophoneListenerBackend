@@ -1,13 +1,15 @@
 import os
 from dotenv import load_dotenv
-from fastapi import FastAPI, Body
+from fastapi import FastAPI
 import uvicorn
 from routes.index import router as index_router
+from routes.speech_to_text_routes import router as speech_to_text_router
 
 app = FastAPI()
 
 # Include routes
 app.include_router(index_router)
+app.include_router(speech_to_text_router, prefix="/speech-to-text", tags=["speech-to-text"])
 
 if __name__ == "__main__":
     load_dotenv()
