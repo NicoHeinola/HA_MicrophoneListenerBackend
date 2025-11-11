@@ -69,11 +69,18 @@ class MicrophoneListener:
         audio_backend_url: str = f"{audio_backend_host}:{audio_backend_port}"
         data = buffer_bytes
 
+        # Convert speech to text via Audio Backend
         response: requests.Response = requests.post(
             f"{audio_backend_url}/speech-to-text",
             headers={"Authorization": f"Bearer {audio_backend_token}"},
             files={"file": ("recording.raw", data, "application/octet-stream")},
         )
+
+        # Convert text to actions via Language Model Backend
+        # TODO: Implement Language Model Backend interaction here
+
+        # Send action to be ran to the Action Runner Backend (HA_Backend)
+        # TODO: Implement Action Runner Backend interaction here
 
         # Automatically restart listening if duration is zero (continuous mode) and still listening
         if duration_seconds == 0 and self._is_listening:
