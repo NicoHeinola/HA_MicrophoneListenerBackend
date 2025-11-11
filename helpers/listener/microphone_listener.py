@@ -69,11 +69,11 @@ class MicrophoneListener:
         audio_backend_url: str = f"{audio_backend_host}:{audio_backend_port}"
         data = buffer_bytes
 
-        # response: requests.Response = requests.post(
-        #    f"{audio_backend_url}/speech-to-text",
-        #    headers={"Authorization": f"Bearer {audio_backend_token}"},
-        #    files={"file": ("recording.raw", data, "application/octet-stream")},
-        # )
+        response: requests.Response = requests.post(
+            f"{audio_backend_url}/speech-to-text",
+            headers={"Authorization": f"Bearer {audio_backend_token}"},
+            files={"file": ("recording.raw", data, "application/octet-stream")},
+        )
 
         # Automatically restart listening if duration is zero (continuous mode) and still listening
         if duration_seconds == 0 and self._is_listening:
@@ -104,8 +104,8 @@ class MicrophoneListener:
         self._is_listening = False
 
         # Signal the speech-to-text helper to stop its processing
-        if self._speech_to_text_helper is not None:
-            self._speech_to_text_helper.stop_listening()
+        if self._recorder is not None:
+            self._recorder.close()
 
         # Wait for the thread to finish with a reasonable timeout
         if self._listening_thread is not None:
@@ -115,5 +115,3 @@ class MicrophoneListener:
                 logger.warning("Listening thread did not stop gracefully within timeout")
 
             self._listening_thread = None
-
-        self._speech_to_text_helper = None

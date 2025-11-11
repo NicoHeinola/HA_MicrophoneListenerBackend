@@ -28,7 +28,6 @@ class SpeechRecorder:
         self._format = format
         self._frames_per_buffer = frames_per_buffer
 
-        self._pyaudio: Optional[pyaudio.PyAudio] = None
         self._stream: Optional[pyaudio.Stream] = None
 
     def _open_stream(self) -> pyaudio.Stream:
@@ -40,8 +39,7 @@ class SpeechRecorder:
         old_stderr_fd = os.dup(2)
         os.dup2(devnull, 2)
         try:
-            self._pyaudio = pyaudio.PyAudio()
-            self._stream = self._pyaudio.open(
+            self._stream = pyaudio.PyAudio().open(
                 format=self._format,
                 channels=self._channels,
                 rate=self._rate,
@@ -64,13 +62,6 @@ class SpeechRecorder:
             except Exception:
                 pass
             self._stream = None
-
-        if self._pyaudio is not None:
-            try:
-                self._pyaudio.terminate()
-            except Exception:
-                pass
-            self._pyaudio = None
 
     def record_until_speech_end(
         self,
