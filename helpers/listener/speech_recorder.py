@@ -103,14 +103,17 @@ class SpeechRecorder:
             except Exception:
                 rms = 0
 
+            # Wait for speech start
             if not speech_started:
                 if rms >= start_threshold:
                     speech_started = True
                 else:
                     continue
 
+            # Add to speech buffer
             buffer.extend(chunk_bytes)
 
+            # Wait for speech end
             if rms < silence_threshold:
                 silence_frames += 1
             else:
