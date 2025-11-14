@@ -100,6 +100,15 @@ class MicrophoneListener:
         finally:
             self._recorder.close()
 
+        # Automatically restart listening if duration is zero (continuous mode) and still listening
+        if duration_seconds == 0 and self._is_listening:
+            self._is_listening = False
+            self._listening_thread = None
+
+            self.start_listening(duration_seconds=duration_seconds)
+        else:
+            logger.info("Listening loop ended.")
+
         # Send data to Audio Backend for speech-to-text processing
         audio_backend_host: str = os.getenv("AUDIO_BACKEND_HOST", "")
         audio_backend_port: int = int(os.getenv("AUDIO_BACKEND_PORT", "0"))
@@ -116,19 +125,24 @@ class MicrophoneListener:
         )
 
         text: str = response.json().get("text", "")
-
         if text:
-            logger.info(f"Recognized text: {text}")
-            self._handle_converted_audio(text)
+            activation_keywords = os.getenv("ACTICATION_KEYWORDS", "").split(",")
+            logger.info(f"Recognized text: '{text}'")
+            for keyword in activation_keywords:
+                activation: bool = False
+                if text.lower().startswith(keyword.strip().lower()):
+                    activation = True
+                    text = text.lower().replace(keyword.strip().lower(), "", 1).strip()
+                elif text.lower().endswith(keyword.strip().lower()):
+                    activation = True
+                    text = text.lower().rsplit(keyword.strip().lower(), 1)[0].strip()
 
-        # Automatically restart listening if duration is zero (continuous mode) and still listening
-        if duration_seconds == 0 and self._is_listening:
-            self._is_listening = False
-            self._listening_thread = None
+                if not activation:
+                    continue
 
-            self.start_listening(duration_seconds=duration_seconds)
-        else:
-            logger.info("Listening loop ended.")
+                logger.info(f"Activation keyword '{keyword}' detected.")
+                self._handle_converted_audio(text)
+                break
 
     def start_listening(self, duration_seconds: int):
         if self.is_listening:
