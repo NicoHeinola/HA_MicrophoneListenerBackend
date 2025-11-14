@@ -57,9 +57,32 @@ class MicrophoneListener:
             json={"text": text},
         )
 
-        action: str = response.json().get("action", "")
+        response_data: dict = response.json()
+        action: str = response_data.get("action", "")
         if not action:
+            logger.info("No action returned from Text to Action backend.")
             return
+
+        # Send action to the Action Runner
+        ha_backend_host: str = os.getenv("HA_BACKEND_HOST", "")
+        ha_backend_port: int = int(os.getenv("HA_BACKEND_PORT", "0"))
+        ha_backend_token: str = os.getenv("HA_BACKEND_TOKEN", "")
+
+        params: dict = response_data.get("params", {})
+        ai_answer: str = response_data.get("ai_answer", "")
+
+        json_data: dict = {"action": {"name": action, "params": params}, "ai_answer": ai_answer}
+
+        logger.info(f"Executing action: '{action}' with params: '{params}' and ai_answer: '{ai_answer}'")
+
+        response: requests.Response = requests.post(
+            f"{ha_backend_host}:{ha_backend_port}/api/action-runner/run-action",
+            headers={"Authorization": f"Bearer {ha_backend_token}", "Accept": "application/json"},
+            json=json_data,
+        )
+
+        if response.status_code != 200:
+            logger.error(f"Failed to execute action: {response.text}")
 
     def _listen_loop(self, duration_seconds: int):
         stream: pyaudio.Stream = self._open_microphone_stream()
@@ -95,6 +118,7 @@ class MicrophoneListener:
         text: str = response.json().get("text", "")
 
         if text:
+            logger.info(f"Recognized text: {text}")
             self._handle_converted_audio(text)
 
         # Automatically restart listening if duration is zero (continuous mode) and still listening
