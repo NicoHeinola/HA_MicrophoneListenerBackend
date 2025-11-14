@@ -30,10 +30,9 @@ def start_listening(token: str = require_auth(), body: dict = Body(...)):
     if microphone_listener.is_listening:
         return {"status": "already_listening", "is_listening": True}
 
-    model: str = body.get("model", "vosk-model-small-en-us-0.15")
     duration_seconds: int | None = int(body.get("duration_seconds", 10))
 
-    microphone_listener.start_listening(model=model, duration_seconds=duration_seconds)
+    microphone_listener.start_listening(duration_seconds=duration_seconds)
 
     return {"status": "listening", "is_listening": True}
 

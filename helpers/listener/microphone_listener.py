@@ -1,10 +1,10 @@
-from email.mime import audio
 import logging
 import os
 import threading
 
 import pyaudio
 import requests
+
 from .speech_recorder import SpeechRecorder
 
 
@@ -45,7 +45,23 @@ class MicrophoneListener:
 
         return stream
 
-    def _listen_loop(self, model: str, duration_seconds: int):
+    def _handle_converted_audio(self, text: str):
+        # Convert text to actions via Language Model Backend
+        tta_backend_host: str = os.getenv("TEXT_TO_ACTION_BACKEND_HOST", "")
+        tta_backend_port: int = int(os.getenv("TEXT_TO_ACTION_BACKEND_PORT", "0"))
+        tta_backend_token: str = os.getenv("TEXT_TO_ACTION_BACKEND_TOKEN", "")
+
+        response: requests.Response = requests.post(
+            f"{tta_backend_host}:{tta_backend_port}/text-to-action",
+            headers={"Authorization": f"Bearer {tta_backend_token}"},
+            json={"text": text},
+        )
+
+        action: str = response.json().get("action", "")
+        if not action:
+            return
+
+    def _listen_loop(self, duration_seconds: int):
         stream: pyaudio.Stream = self._open_microphone_stream()
         stream.start_stream()
         logger.info("Listening for speech...")
@@ -76,29 +92,28 @@ class MicrophoneListener:
             files={"file": ("recording.raw", data, "application/octet-stream")},
         )
 
-        # Convert text to actions via Language Model Backend
-        # TODO: Implement Language Model Backend interaction here
+        text: str = response.json().get("text", "")
 
-        # Send action to be ran to the Action Runner Backend (HA_Backend)
-        # TODO: Implement Action Runner Backend interaction here
+        if text:
+            self._handle_converted_audio(text)
 
         # Automatically restart listening if duration is zero (continuous mode) and still listening
         if duration_seconds == 0 and self._is_listening:
             self._is_listening = False
             self._listening_thread = None
 
-            self.start_listening(model=model, duration_seconds=duration_seconds)
+            self.start_listening(duration_seconds=duration_seconds)
         else:
             logger.info("Listening loop ended.")
 
-    def start_listening(self, model: str, duration_seconds: int):
+    def start_listening(self, duration_seconds: int):
         if self.is_listening:
             return
 
         self._is_listening = True
         self._listening_thread = threading.Thread(
             target=self._listen_loop,
-            args=(model, duration_seconds),
+            args=(duration_seconds,),
             daemon=True,
         )
         self._listening_thread.start()
