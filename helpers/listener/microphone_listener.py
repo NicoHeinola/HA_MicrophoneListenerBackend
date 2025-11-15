@@ -73,17 +73,13 @@ class MicrophoneListener:
             logger.warning(f"Text to Action backend returned error: {response.text}")
             return
 
-        response_data: dict = response.json()
-        action: str = response_data.get("action", "")
-        if not action:
-            logger.info(f"No action returned from Text to Action backend. Response data: {response_data}")
-            return
-
         # Send action to the Action Runner
         ha_backend_host: str = os.getenv("HA_BACKEND_HOST", "")
         ha_backend_port: int = int(os.getenv("HA_BACKEND_PORT", "0"))
         ha_backend_token: str = os.getenv("HA_BACKEND_TOKEN", "")
 
+        response_data: dict = response.json()
+        action: str = response_data.get("action", "")
         params: dict = response_data.get("params", {})
         ai_answer: str = response_data.get("ai_answer", "")
 
