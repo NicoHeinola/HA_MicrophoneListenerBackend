@@ -97,7 +97,13 @@ class MicrophoneListener:
             logger.warning(f"Failed to execute action: {response.text}")
 
     def _listen_loop(self, duration_seconds: int):
-        stream: pyaudio.Stream = self._open_microphone_stream()
+        try:
+            stream: pyaudio.Stream = self._open_microphone_stream()
+        except OSError as e:
+            logger.error(f"Failed to open microphone stream: {e}")
+            self._is_listening = False
+            return
+
         stream.start_stream()
         logger.info("Listening for speech...")
 
