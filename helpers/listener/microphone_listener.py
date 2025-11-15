@@ -76,7 +76,7 @@ class MicrophoneListener:
         response_data: dict = response.json()
         action: str = response_data.get("action", "")
         if not action:
-            logger.info("No action returned from Text to Action backend.")
+            logger.info(f"No action returned from Text to Action backend. Response data: {response_data}")
             return
 
         # Send action to the Action Runner
@@ -141,7 +141,7 @@ class MicrophoneListener:
             headers={"Authorization": f"Bearer {audio_backend_token}"},
             files={
                 "file": ("recording.wav", wav_bytes, "audio/wav"),
-                "speed": (None, "1.05", "text/plain"),
+                "speed": (None, "1.02", "text/plain"),
             },
         )
 
