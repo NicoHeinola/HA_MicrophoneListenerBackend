@@ -102,7 +102,7 @@ class MicrophoneListener:
         params: dict = response_data.get("params", {})
         ai_answer: str = response_data.get("ai_answer", "")
 
-        json_data: dict = {"action": {"name": action, "params": params}}
+        json_data: dict = {"action": action, "params": params}
 
         logger.info(f"Executing action: '{action}' with params: '{params}'")
 
