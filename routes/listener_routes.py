@@ -1,8 +1,10 @@
 import os
+from dotenv import load_dotenv
 from fastapi import APIRouter, Body
 from helpers.listener.microphone_listener import MicrophoneListener
 from middleware.auth import require_auth
 
+load_dotenv()
 
 router = APIRouter()
 

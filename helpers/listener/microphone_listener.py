@@ -3,8 +3,6 @@ import wave
 import logging
 import os
 import threading
-
-import pyaudio
 import requests
 
 from .speech_recorder import SpeechRecorder
@@ -39,26 +37,6 @@ class MicrophoneListener:
     @property
     def is_listening(self) -> bool:
         return self._is_listening and self._listening_thread is not None and self._listening_thread.is_alive()
-
-    def _open_microphone_stream(self) -> pyaudio.Stream:
-        """Open microphone audio stream for recording"""
-
-        # Suppress ALSA and audio device warnings during PyAudio instantiation
-        devnull = os.open(os.devnull, os.O_WRONLY)
-        old_stderr_fd = os.dup(2)
-        os.dup2(devnull, 2)
-        try:
-            mic: pyaudio.PyAudio = pyaudio.PyAudio()
-            stream = mic.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8192)
-        except Exception as e:
-            logger.error(f"Error opening microphone stream: {e}")
-            raise
-        finally:
-            os.dup2(old_stderr_fd, 2)
-            os.close(devnull)
-            os.close(old_stderr_fd)
-
-        return stream
 
     def _playback_ai_answer(self, ai_answer: str):
         # Send action to the Action Runner
@@ -123,14 +101,6 @@ class MicrophoneListener:
             logger.warning(f"Failed to execute action: {response.text}")
 
     def _listen_loop(self, duration_seconds: int):
-        try:
-            stream: pyaudio.Stream = self._open_microphone_stream()
-        except OSError as e:
-            logger.error(f"Failed to open microphone stream: {e}")
-            self._is_listening = False
-            return
-
-        stream.start_stream()
         logger.info("Listening for speech...")
 
         try:

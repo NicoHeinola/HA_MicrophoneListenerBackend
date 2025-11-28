@@ -26,11 +26,13 @@ class SpeechRecorder:
         channels: int = 1,
         format: int = pyaudio.paInt16,
         frames_per_buffer: int = 8192,
+        device_index: Optional[int] = None,
     ):
         self._rate = rate
         self._channels = channels
         self._format = format
         self._frames_per_buffer = frames_per_buffer
+        self._device_index = device_index
 
         self._stream: Optional[pyaudio.Stream] = None
 
@@ -43,12 +45,26 @@ class SpeechRecorder:
         old_stderr_fd = os.dup(2)
         os.dup2(devnull, 2)
         try:
-            self._stream = pyaudio.PyAudio().open(
+            pa = pyaudio.PyAudio()
+
+            # Log device info for debugging
+            if self._device_index is not None:
+                device_info = pa.get_device_info_by_index(self._device_index)
+                logger.info(f"Opening microphone: {device_info['name']} (Device {self._device_index})")
+            else:
+                device_info = pa.get_default_input_device_info()
+                if device_info:
+                    logger.info(f"Opening default microphone: {device_info['name']}")
+                else:
+                    logger.info("Opening default microphone: (no device info available)")
+
+            self._stream = pa.open(
                 format=self._format,
                 channels=self._channels,
                 rate=self._rate,
                 input=True,
                 frames_per_buffer=self._frames_per_buffer,
+                input_device_index=self._device_index,
             )
             self._stream.start_stream()
         except Exception as e:
@@ -115,7 +131,7 @@ class SpeechRecorder:
             if not speech_started:
                 if rms >= start_threshold:
                     speech_started = True
-                    logger.info(f"Speech detected (RMS: {rms})")
+                    logger.info(f"Speech detected (RMS: {rms} / {start_threshold})")
                 else:
                     continue
 
@@ -129,7 +145,7 @@ class SpeechRecorder:
                 silence_frames = 0
 
             if silence_frames >= silence_max_frames:
-                logger.info(f"Silence detected ({silence_frames} frames), ending recording")
+                logger.info(f"Silence detected ({silence_frames} frames) / {silence_threshold}, ending recording")
                 break
 
         return bytes(buffer)
