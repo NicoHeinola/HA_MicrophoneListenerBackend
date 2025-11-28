@@ -50,6 +50,9 @@ class MicrophoneListener:
         try:
             mic: pyaudio.PyAudio = pyaudio.PyAudio()
             stream = mic.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=8192)
+        except Exception as e:
+            logger.error(f"Error opening microphone stream: {e}")
+            raise
         finally:
             os.dup2(old_stderr_fd, 2)
             os.close(devnull)
@@ -138,6 +141,9 @@ class MicrophoneListener:
                 silence_max_frames=self._recorder_silence_max_frames,
                 chunk=self._recorder_chunk_size,
             )
+        except Exception as e:
+            logger.error(f"Error during recording: {e}")
+            raise
         finally:
             self._recorder.close()
 

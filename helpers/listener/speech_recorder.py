@@ -7,12 +7,16 @@ speech detection.
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 import audioop
 from typing import Optional
 
 import pyaudio
+
+
+logger = logging.getLogger(__name__)
 
 
 class SpeechRecorder:
@@ -47,6 +51,9 @@ class SpeechRecorder:
                 frames_per_buffer=self._frames_per_buffer,
             )
             self._stream.start_stream()
+        except Exception as e:
+            logger.error(f"Error opening audio stream: {e}")
+            raise
         finally:
             os.dup2(old_stderr_fd, 2)
             os.close(devnull)
@@ -92,7 +99,8 @@ class SpeechRecorder:
 
             try:
                 chunk_bytes = stream.read(chunk, exception_on_overflow=False)
-            except Exception:
+            except Exception as e:
+                logger.error(f"Error reading from stream: {e}")
                 break
 
             if not chunk_bytes:
@@ -107,6 +115,7 @@ class SpeechRecorder:
             if not speech_started:
                 if rms >= start_threshold:
                     speech_started = True
+                    logger.info(f"Speech detected (RMS: {rms})")
                 else:
                     continue
 
@@ -120,6 +129,7 @@ class SpeechRecorder:
                 silence_frames = 0
 
             if silence_frames >= silence_max_frames:
+                logger.info(f"Silence detected ({silence_frames} frames), ending recording")
                 break
 
         return bytes(buffer)
